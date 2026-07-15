@@ -97,4 +97,54 @@ describe('self-host docker config', () => {
     expect(compose).toContain('INSTATIC_SECRET_KEY:')
     expect(compose).toContain('TRUSTED_PROXY_CIDRS:')
   })
+
+  describe('Dokploy compose files', () => {
+    // Dokploy takes a single Compose file path per application — it can't stack
+    // overrides the way `docker compose -f a -f b` does. Both Dokploy variants
+    // are therefore self-contained (`build:` inlined, no compose.build.yml /
+    // compose.sqlite.yml overlay) and must stay structurally in sync on the
+    // shared `app` service: same build, network, expose, and required env keys.
+    const sqlite = readFileSync('compose.dokploy.yml', 'utf8')
+    const postgres = readFileSync('compose.dokploy-postgres.yml', 'utf8')
+
+    it('builds from the repo Dockerfile instead of pulling an image', () => {
+      for (const compose of [sqlite, postgres]) {
+        expect(compose).toContain('dockerfile: Dockerfile')
+        expect(compose).not.toContain('ghcr.io/corebunch/instatic')
+      }
+    })
+
+    it('attaches the app service to the external dokploy-network and never publishes a host port', () => {
+      for (const compose of [sqlite, postgres]) {
+        expect(compose).toContain('dokploy-network')
+        expect(compose).toContain('external: true')
+        expect(compose).toContain("expose:\n      - '3001'")
+        expect(compose).not.toContain('ports:')
+      }
+    })
+
+    it('requires PUBLIC_ORIGIN at load time instead of silently booting with a broken CSRF check', () => {
+      for (const compose of [sqlite, postgres]) {
+        expect(compose).toContain('${PUBLIC_ORIGIN:?')
+      }
+    })
+
+    it('persists uploads on a named volume in both variants', () => {
+      for (const compose of [sqlite, postgres]) {
+        expect(compose).toContain('uploads:/app/uploads')
+      }
+    })
+
+    it('points SQLite at a persisted data volume and disables Postgres entirely', () => {
+      expect(sqlite).toContain('DATABASE_URL: sqlite:/app/data/cms.db')
+      expect(sqlite).toContain('data:/app/data')
+      expect(sqlite).not.toContain('postgres')
+    })
+
+    it('requires POSTGRES_PASSWORD at load time and wires the app to the bundled postgres service', () => {
+      expect(postgres).toContain('${POSTGRES_PASSWORD:?')
+      expect(postgres).toContain('condition: service_healthy')
+      expect(postgres).toContain('DATABASE_URL: postgres://')
+    })
+  })
 })
