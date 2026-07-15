@@ -8,8 +8,15 @@
 # `DATABASE_URL=postgres://...` in your environment if you want to develop
 # against the Postgres mode instead.
 #
+# NOT A DEPLOY TARGET. This file starts only a bare Postgres container with a
+# hardcoded password — there is no `app` service here. Do not point a hosting
+# platform (Dokploy, etc.) at this file as its Compose Path; it will deploy an
+# unauthenticated database with nothing serving the CMS.
+#
 # For a fully-containerized stack (closer to production), use:
 #   docker compose -f compose.prod.yml -f compose.build.yml up --build
+# For Dokploy specifically, use compose.dokploy.yml or
+# compose.dokploy-postgres.yml — see docs/deployment/dokploy.md.
 
 services:
   postgres:

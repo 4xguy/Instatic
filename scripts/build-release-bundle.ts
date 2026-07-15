@@ -19,9 +19,12 @@ const bundleFiles = [
   'compose.prod.yml',
   'compose.sqlite.yml',
   'compose.tls.yml',
+  'compose.dokploy.yml',
+  'compose.dokploy-postgres.yml',
   '.env.production.example',
   'docs/deployment/README.md',
   'docs/deployment/vps.md',
+  'docs/deployment/dokploy.md',
   'docs/deployment/docker-image.md',
   'docs/deployment/tls-caddy.md',
   'docs/deployment/backup-restore.md',
@@ -104,6 +107,12 @@ PUBLIC_ORIGIN=https://\${{RAILWAY_PUBLIC_DOMAIN}}
 \`\`\`
 
 Read \`docs/deployment/railway.md\`, \`docs/deployment/vps.md\`, and \`docs/deployment/backup-restore.md\` before running a public site.
+
+## Dokploy install
+
+In Dokploy, create a Docker Compose application from this repository and set the Compose Path to \`compose.dokploy.yml\` (SQLite) or \`compose.dokploy-postgres.yml\` (Postgres). Set \`PUBLIC_ORIGIN\` and \`INSTATIC_SECRET_KEY\` (and \`POSTGRES_PASSWORD\` for the Postgres variant) in the Environment panel, then add your domain in the Domains tab.
+
+Read \`docs/deployment/dokploy.md\` before running a public site.
 
 ## Render Blueprint install
 

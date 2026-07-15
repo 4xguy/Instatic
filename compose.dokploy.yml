@@ -1,0 +1,47 @@
+# compose.dokploy.yml
+# Self-contained Dokploy Compose deployment: SQLite, source-built from the
+# repo's Dockerfile. Set this file as the Compose Path in the Dokploy UI and
+# add your domain in the app's Domains tab — Dokploy injects Traefik labels
+# and attaches the service to `dokploy-network` for you.
+#
+# Set in the Dokploy environment panel:
+#   PUBLIC_ORIGIN        REQUIRED — https://<your Dokploy domain>
+#   INSTATIC_SECRET_KEY  output of `bun run scripts/generate-secret-key.ts`
+#
+# See docs/deployment/dokploy.md for the full walkthrough.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - '3001'
+    environment:
+      PORT: '3001'
+      DATABASE_URL: sqlite:/app/data/cms.db
+      UPLOADS_DIR: /app/uploads
+      STATIC_DIR: /app/dist
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to https://<your Dokploy domain> in the Dokploy environment panel}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12}
+      INSTATIC_SECRET_KEY: ${INSTATIC_SECRET_KEY:-}
+    volumes:
+      - data:/app/data
+      - uploads:/app/uploads
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ['CMD', 'bun', 'run', 'server/healthcheck.ts']
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  data:
+  uploads:
+
+networks:
+  dokploy-network:
+    external: true
